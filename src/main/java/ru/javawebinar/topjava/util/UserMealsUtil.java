@@ -31,36 +31,24 @@ public class UserMealsUtil {
 
     public static List<UserMealWithExceed> getFilteredWithExceeded(List<UserMeal> mealList, LocalTime startTime, LocalTime endTime, int caloriesPerDay) {
 
-        Map<LocalDate, Integer> temp = new HashMap<>();
+        Map<LocalDate, Integer> temp2 = mealList.stream().collect(Collectors.toMap(p -> p.getDateTime().toLocalDate(), t -> t.getCalories(), (p1, p2) -> p1 + p2));
 
-        for (UserMeal usM : mealList) {
-            int sum;
-            if (!temp.containsKey(usM.getDateTime().toLocalDate())) {
-                sum = usM.getCalories();
-                temp.put(usM.getDateTime().toLocalDate(), sum);
-            } else {
-                sum = usM.getCalories() + temp.get(usM.getDateTime().toLocalDate());
-                temp.put(usM.getDateTime().toLocalDate(), sum);
-            }
-        }
+        List<UserMealWithExceed> list2 = new ArrayList<>();
 
-        List<UserMealWithExceed> list = new ArrayList<>();
+        mealList.stream()
+                .map(e ->
+                        (temp2.get(e.getDateTime().toLocalDate()) > caloriesPerDay) ?
+                                list2.add(new UserMealWithExceed(e.getDateTime(), e.getDescription(), e.getCalories(), true)) :
+                                list2.add(new UserMealWithExceed(e.getDateTime(), e.getDescription(), e.getCalories(), false))
 
-        for (UserMeal um : mealList) {
-            if (temp.get(um.getDateTime().toLocalDate()) > caloriesPerDay) {
-                list.add(new UserMealWithExceed(um.getDateTime(), um.getDescription(), um.getCalories(), true));
-            } else
-                list.add(new UserMealWithExceed(um.getDateTime(), um.getDescription(), um.getCalories(), false));
-        }
+                ).collect(Collectors.toList());
 
-        List<UserMealWithExceed> results = new ArrayList<>();
-        for (UserMealWithExceed umw : list) {
-            if (TimeUtil.isBetween(umw.getDateTime().toLocalTime(), startTime, endTime)) {
-                results.add(umw);
-            }
-        }
+        List<UserMealWithExceed> results2 = list2
+                .stream()
+                .filter(um -> TimeUtil.isBetween(um.getDateTime().toLocalTime(), startTime, endTime))
+                .collect(Collectors.toList());
 
-        return results;
+        return results2;
 
     }
 
